@@ -16,13 +16,13 @@ jenkins: docker-image-test_base-devel
 jenkins: docker-push_base-devel
 
 rootfs_minimal:
-	docker run --rm -ti -v "$(CURDIR):$(CURDIR)" -w "$(CURDIR)" \
+	docker run --rm -i -v "$(CURDIR):$(CURDIR)" -w "$(CURDIR)" \
 		--privileged --tmpfs=/tmp:exec --tmpfs=/run/shm \
 		$(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest \
 		sh -c 'pacman -Sy --noconfirm devtools tar && bash mkroots.sh'
 
 rootfs_%:
-	docker run --rm -ti -v "$(CURDIR):$(CURDIR)" -w "$(CURDIR)" \
+	docker run --rm -i -v "$(CURDIR):$(CURDIR)" -w "$(CURDIR)" \
 		--privileged --tmpfs=/tmp:exec --tmpfs=/run/shm \
 		$(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest \
 		sh -c 'pacman -Sy --noconfirm devtools tar && bash mkroots.sh $*'
