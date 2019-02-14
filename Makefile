@@ -1,36 +1,43 @@
-DOCKER_USER:=pierres
-DOCKER_ORGANIZATION=archlinux
-DOCKER_IMAGE:=base
+DOCKER_ORGANIZATION=luzifer
+DOCKER_IMAGE:=archlinux
 
-rootfs:
-	$(eval TMPDIR := $(shell mktemp -d))
-	env -i pacstrap -C /usr/share/devtools/pacman-extra.conf -c -d -G -M $(TMPDIR) $(shell cat packages)
-	cp --recursive --preserve=timestamps --backup --suffix=.pacnew rootfs/* $(TMPDIR)/
-	arch-chroot $(TMPDIR) locale-gen
-	arch-chroot $(TMPDIR) pacman-key --init
-	arch-chroot $(TMPDIR) pacman-key --populate archlinux
-	tar --numeric-owner --xattrs --acls --exclude-from=exclude -C $(TMPDIR) -c . -f archlinux.tar
-	rm -rf $(TMPDIR)
+default: docker-image_minimal
 
-docker-image: rootfs
-	docker build -t $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE) .
+jenkins: docker-image_minimal
+jenkins: docker-image-test_latest
+jenkins: docker-push_latest
 
-docker-image-test: docker-image
+jenkins: docker-image_base
+jenkins: docker-image-test_base
+jenkins: docker-push_base
+
+jenkins: docker-image_base-devel
+jenkins: docker-image-test_base-devel
+jenkins: docker-push_base-devel
+
+rootfs_minimal:
+	bash mkroots.sh
+
+rootfs_%:
+	bash mkroots.sh $*
+
+docker-image_minimal: rootfs_minimal
+	docker build -t $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest .
+
+docker-image_%:
+	$(MAKE) rootfs_$*
+	docker build -t $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$* .
+
+docker-image-test_%:
 	# FIXME: /etc/mtab is hidden by docker so the stricter -Qkk fails
-	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE) sh -c "/usr/bin/pacman -Sy && /usr/bin/pacman -Qqk"
-	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE) sh -c "/usr/bin/pacman -Syu --noconfirm docker && docker -v"
+	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$* sh -c "/usr/bin/pacman -Sy && /usr/bin/pacman -Qqk"
+	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$* sh -c "/usr/bin/pacman -Syu --noconfirm docker && docker -v"
 	# Ensure that the image does not include a private key
-	! docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE) pacman-key --lsign-key pierre@archlinux.de
-	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE) sh -c "/usr/bin/id -u http"
-	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE) sh -c "/usr/bin/pacman -Syu --noconfirm grep && locale | grep -q UTF-8"
+	! docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$* pacman-key --lsign-key pierre@archlinux.de
+	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$* sh -c "/usr/bin/id -u http"
+	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$* sh -c "/usr/bin/pacman -Syu --noconfirm grep && locale | grep -q UTF-8"
 
-ci-test:
-	docker run --rm --privileged --tmpfs=/tmp:exec --tmpfs=/run/shm -v /run/docker.sock:/run/docker.sock \
-		-v $(PWD):/app -w /app $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE) \
-		sh -c 'pacman -Syu --noconfirm make devtools docker && make docker-image-test'
-
-docker-push:
-	docker login -u $(DOCKER_USER)
-	docker push $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE)
+docker-push_%:
+	docker push $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$*
 
 .PHONY: rootfs docker-image docker-image-test ci-test docker-push
