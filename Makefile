@@ -16,10 +16,16 @@ jenkins: docker-image-test_base-devel
 jenkins: docker-push_base-devel
 
 rootfs_minimal:
-	bash mkroots.sh
+	docker run --rm -ti -v "$(CURDIR):$(CURDIR)" -w "$(CURDIR)" \
+		--privileged --tmpfs=/tmp:exec --tmpfs=/run/shm \
+		$(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest \
+		sh -c 'pacman -Sy --noconfirm devtools tar && bash mkroots.sh'
 
 rootfs_%:
-	bash mkroots.sh $*
+	docker run --rm -ti -v "$(CURDIR):$(CURDIR)" -w "$(CURDIR)" \
+		--privileged --tmpfs=/tmp:exec --tmpfs=/run/shm \
+		$(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest \
+		sh -c 'pacman -Sy --noconfirm devtools tar && bash mkroots.sh $*'
 
 docker-image_minimal: rootfs_minimal
 	docker build -t $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest .
@@ -38,6 +44,12 @@ docker-image-test_%:
 	docker run --rm $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$* sh -c "/usr/bin/pacman -Syu --noconfirm grep && locale | grep -q UTF-8"
 
 docker-push_%:
+	docker push $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$*
+
+# Special build target to locally build the first minimal image
+seed:
+	bash mkroots.sh
+	docker build -t $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest .
 	docker push $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$*
 
 .PHONY: rootfs docker-image docker-image-test ci-test docker-push
