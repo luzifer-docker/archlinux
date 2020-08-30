@@ -1,7 +1,10 @@
 DOCKER_ORGANIZATION=luzifer
 DOCKER_IMAGE:=archlinux
 
+default: seed
 default: docker-image_minimal
+default: docker-image-test_latest
+default: docker-push_latest
 
 jenkins: docker-image_minimal
 jenkins: docker-image-test_latest
@@ -47,9 +50,11 @@ docker-push_%:
 	docker push $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$*
 
 # Special build target to locally build the first minimal image
-seed:
+seed: test_archlinux
 	bash mkroots.sh
 	docker build -t $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):latest .
-	docker push $(DOCKER_ORGANIZATION)/$(DOCKER_IMAGE):$*
+
+test_archlinux:
+	which pacstrap
 
 .PHONY: rootfs docker-image docker-image-test ci-test docker-push
