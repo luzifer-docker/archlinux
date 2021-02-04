@@ -42,5 +42,18 @@ arch-chroot ${tmpdir} pacman-key --populate archlinux
 # Temporarily break the tmpfiles hook which causes every pacman operation to hang forever
 sed -i 's!^Exec.*!Exec = /usr/bin/true!' ${tmpdir}/usr/share/libalpm/hooks/30-systemd-tmpfiles.hook
 
+cat >${tmpdir}/usr/share/libalpm/hooks/01-remove-tmpfiles.hook <<-'EOF'
+	[Trigger]
+	Type = Path
+	Operation = Install
+	Operation = Upgrade
+	Target = usr/share/libalpm/hooks/*.hook
+
+	[Action]
+	Description = Removing tmpfiles hook...
+	When = PostTransaction
+	Exec = /usr/bin/bash -exc "/usr/bin/sed -i 's!^Exec = .*/systemd-hook tmpfiles!Exec = /usr/bin/true!' /usr/share/libalpm/hooks/*.hook"
+EOF
+
 # Pack rootfs
 tar --numeric-owner --xattrs --acls --exclude-from=exclude -C ${tmpdir} -c . -f archlinux.tar

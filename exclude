@@ -7,6 +7,7 @@ etc/pacman.d/gnupg/private-keys-v1.d/*
 etc/pacman.d/gnupg/pubring.gpg~
 etc/pacman.d/gnupg/S.*
 root/*
+run/*
 tmp/*
 var/cache/pacman/pkg/*
 var/lib/pacman/sync/*
