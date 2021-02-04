@@ -40,7 +40,7 @@ arch-chroot ${tmpdir} pacman-key --init
 arch-chroot ${tmpdir} pacman-key --populate archlinux
 
 # Temporarily break the tmpfiles hook which causes every pacman operation to hang forever
-sed -i 's!^Exec.*!Exec = /usr/bin/true!' ${tmpdir}/usr/share/libalpm/hooks/30-systemd-tmpfiles.hook
+sed -i 's!^Exec = .*/systemd-hook tmpfiles$!Exec = /usr/bin/true!' ${tmpdir}/usr/share/libalpm/hooks/*.hook
 
 cat >${tmpdir}/usr/share/libalpm/hooks/01-remove-tmpfiles.hook <<-'EOF'
 	[Trigger]
@@ -52,7 +52,7 @@ cat >${tmpdir}/usr/share/libalpm/hooks/01-remove-tmpfiles.hook <<-'EOF'
 	[Action]
 	Description = Removing tmpfiles hook...
 	When = PostTransaction
-	Exec = /usr/bin/bash -exc "/usr/bin/sed -i 's!^Exec = .*/systemd-hook tmpfiles!Exec = /usr/bin/true!' /usr/share/libalpm/hooks/*.hook"
+	Exec = /usr/bin/bash -exc "/usr/bin/sed -i 's!^Exec = .*/systemd-hook tmpfiles$!Exec = /usr/bin/true!' /usr/share/libalpm/hooks/*.hook"
 EOF
 
 # Pack rootfs
