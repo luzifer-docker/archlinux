@@ -51,6 +51,9 @@ pacman-key --populate archlinux
 # Stop agent to free /dev mount
 export GNUPGHOME=/etc/pacman.d/gnupg
 gpgconf --kill gpg-agent
+
+# Give the agent some time to die
+sleep 5
 EOF
 
 # Pack rootfs
