@@ -4,30 +4,34 @@ set -euxo pipefail
 [ $(id -u) -eq 0 ] || exec sudo bash $0 "$@"
 
 [ -e /usr/share/devtools/pacman-extra.conf ] || {
-	echo "Missing 'devtools' on this system. Please 'pacman -S devtools'."
-	exit 1
+  echo "Missing 'devtools' on this system. Please 'pacman -S devtools'."
+  exit 1
 }
 
 # Packages required for the minimal system
 packages=(
-	awk
-	gzip
-	pacman
-	sed
-	systemd
+  awk
+  gzip
+  pacman
+  sed
+  systemd
 )
 
 # In case more packages were passed add them to the package list
 if [ $# -gt 0 ]; then
-	packages+=("$@")
+  packages+=("$@")
 fi
 
 # Build in a tempdir
 tmpdir=$(mktemp -d)
 function rm_temp() {
-	rm -rf ${tmpdir}
+  umount ${tmpdir}
+  rm -rf ${tmpdir}
 }
 trap rm_temp EXIT
+
+# Create a bind-mount to avoid side-effects on the host system
+mount --bind ${tmpdir} ${tmpdir}
 
 # Pacstrap the requested packages
 env -i pacstrap -C /usr/share/devtools/pacman-extra.conf -c -d -G -M ${tmpdir} "${packages[@]}"
@@ -36,9 +40,18 @@ env -i pacstrap -C /usr/share/devtools/pacman-extra.conf -c -d -G -M ${tmpdir} "
 cp --recursive --preserve=timestamps --backup --suffix=.pacnew rootfs/* ${tmpdir}/
 
 # Initialize locales and pacman-keys
-arch-chroot ${tmpdir} locale-gen
-arch-chroot ${tmpdir} pacman-key --init
-arch-chroot ${tmpdir} pacman-key --populate archlinux
+arch-chroot ${tmpdir} bash -ex <<EOF
+# Generate locales
+locale-gen
+
+# Initialize pacman-key keyring
+pacman-key --init
+pacman-key --populate archlinux
+
+# Stop agent to free /dev mount
+export GNUPGHOME=/etc/pacman.d/gnupg
+gpgconf --kill gpg-agent
+EOF
 
 # Pack rootfs
 tar --numeric-owner --xattrs --acls --exclude-from=exclude -C ${tmpdir} -c . -f archlinux.tar
