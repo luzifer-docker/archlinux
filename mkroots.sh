@@ -10,6 +10,7 @@ set -euxo pipefail
 
 # Packages required for the minimal system
 packages=(
+  archlinux-keyring
   awk
   gzip
   pacman
