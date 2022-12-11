@@ -35,7 +35,7 @@ trap rm_temp EXIT
 mount --bind ${tmpdir} ${tmpdir}
 
 # Pacstrap the requested packages
-env -i pacstrap -C /usr/share/devtools/pacman-extra.conf -c -d -G -M ${tmpdir} "${packages[@]}"
+env -i pacstrap -C /usr/share/devtools/pacman-extra.conf -c -G -M ${tmpdir} "${packages[@]}"
 
 # Add local configurations
 cp --recursive --preserve=timestamps --backup --suffix=.pacnew rootfs/* ${tmpdir}/
