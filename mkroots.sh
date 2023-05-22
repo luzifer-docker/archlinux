@@ -3,7 +3,7 @@ set -euxo pipefail
 
 [ $(id -u) -eq 0 ] || exec sudo bash $0 "$@"
 
-[ -e /usr/share/devtools/pacman-extra.conf ] || {
+[ -e /usr/share/devtools/pacman.conf.d/extra.conf ] || {
   echo "Missing 'devtools' on this system. Please 'pacman -S devtools'."
   exit 1
 }
@@ -35,7 +35,7 @@ trap rm_temp EXIT
 mount --bind ${tmpdir} ${tmpdir}
 
 # Pacstrap the requested packages
-env -i pacstrap -C /usr/share/devtools/pacman-extra.conf -c -G -M ${tmpdir} "${packages[@]}"
+env -i pacstrap -C /usr/share/devtools/pacman.conf.d/extra.conf -c -G -M ${tmpdir} "${packages[@]}"
 
 # Add local configurations
 cp --recursive --preserve=timestamps --backup --suffix=.pacnew rootfs/* ${tmpdir}/
