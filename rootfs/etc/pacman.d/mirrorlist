@@ -1,1 +1,2 @@
-Server = https://mirrors.kernel.org/archlinux/$repo/os/$arch
+Server = http://packages.oth-regensburg.de/archlinux/$repo/os/$arch
+Server = http://ftp.halifax.rwth-aachen.de/archlinux/$repo/os/$arch
