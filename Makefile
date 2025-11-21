@@ -1,4 +1,5 @@
 IMAGE_BASE:=ghcr.io/luzifer-docker/archlinux
+BUILD_TIMESTAMP:=$(shell date --iso-8601=seconds --utc)
 
 default: seed
 default: docker-image_minimal
@@ -30,11 +31,17 @@ rootfs_%:
 		sh -c 'pacman -Sy --noconfirm devtools tar && bash mkroots.sh $*'
 
 docker-image_minimal: rootfs_minimal
-	docker build -t $(IMAGE_BASE):latest .
+	docker build \
+		--label org.opencontainers.image.created="${BUILD_TIMESTAMP}" \
+		--tag $(IMAGE_BASE):latest \
+		.
 
 docker-image_%:
 	$(MAKE) rootfs_$*
-	docker build -t $(IMAGE_BASE):$* .
+	docker build \
+		--label org.opencontainers.image.created="${BUILD_TIMESTAMP}" \
+		--tag $(IMAGE_BASE):$* \
+		.
 
 docker-image-test_%:
 	# FIXME: /etc/mtab is hidden by docker so the stricter -Qkk fails
