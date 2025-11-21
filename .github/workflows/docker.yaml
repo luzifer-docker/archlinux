@@ -3,6 +3,8 @@ name: CI Workflow
 on:
   push:
     branches: [master]
+  schedule:
+    - cron: '0 4 * * *'
 
 permissions:
   contents: read
@@ -36,15 +38,20 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Docker Build
+      - name: Build
         run: |
-          docker buildx build \
-            --no-cache \
-            --pull \
-            --tag ${{ steps.image.outputs.name }} \
-            .
+          make \
+            docker-image_minimal \
+            docker-image_base \
+            docker-image_base-devel \
+            docker-image-test_latest \
+            docker-image-test_base \
+            docker-image-test_base-devel
 
       - name: Docker Push
         run: |
-          docker push ${{ steps.image.outputs.name }}
+          make \
+            docker-push_latest \
+            docker-push_base \
+            docker-push_base-devel
         if: ${{ github.ref == 'refs/heads/master' }}
