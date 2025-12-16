@@ -49,6 +49,9 @@ locale-gen
 pacman-key --init
 pacman-key --populate archlinux
 
+# Disable sandboxes for Container pacman
+sed -i 's/#DisableSandbox/DisableSandbox/' /etc/pacman.conf
+
 # Stop agent to free /dev mount
 export GNUPGHOME=/etc/pacman.d/gnupg
 gpgconf --kill gpg-agent
